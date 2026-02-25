@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SysLock — Remote Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #060608;
+    --panel:    #0d0d12;
+    --border:   #1a1a2e;
+    --accent:   #cc2200;
+    --accent2:  #ff4422;
+    --green:    #00cc66;
+    --dim:      #33334d;
+    --text:     #c8c8dd;
+    --mono:     'Share Tech Mono', monospace;
+    --sans:     'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* ── Scanline overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,.08) 3px,
+      rgba(0,0,0,.08) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--accent); box-shadow: 0 0 0 0 rgba(204,34,0,.4); }
+    50%       { border-color: var(--accent2); box-shadow: 0 0 12px 4px rgba(204,34,0,.2); }
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent2);
+  }
+
+  .status-pill {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    border-radius: 99px;
+    border: 1px solid;
+    letter-spacing: 2px;
+    transition: all .4s;
+  }
+  .status-pill.online  { border-color: var(--green); color: var(--green); }
+  .status-pill.offline { border-color: var(--dim);   color: var(--dim); }
+  .status-pill.locked  { border-color: var(--accent); color: var(--accent);
+                          animation: pill-blink .8s step-start infinite; }
+
+  @keyframes pill-blink { 50% { opacity: 0; } }
+
+  /* ── Main ── */
+  main {
+    width: 100%;
+    max-width: 860px;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* ── Auth card ── */
+  #auth-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+  }
+
+  #auth-card h2 {
+    font-family: var(--mono);
+    font-size: .85rem;
+    letter-spacing: 3px;
+    color: var(--dim);
+    margin-bottom: 20px;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .field-row input {
+    flex: 1;
+    min-width: 220px;
+    background: var(--bg);
+    border: 1px solid var(--dim);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: .9rem;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .field-row input:focus { border-color: var(--accent2); }
+
+  btn, .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: .95rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--dim);
+    color: var(--text);
+  }
+  .btn-primary:hover { background: #25254a; }
+
+  /* ── Control card ── */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+  }
+
+  .card h2 {
+    font-family: var(--mono);
+    font-size: .75rem;
+    letter-spacing: 3px;
+    color: var(--dim);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  /* ── Big lock button ── */
+  .lock-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 0;
+  }
+
+  #big-lock-btn {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 3px solid var(--dim);
+    background: transparent;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px;
+    transition: all .25s;
+    position: relative;
+    color: var(--dim);
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: 2px;
+  }
+
+  #big-lock-btn .icon { font-size: 48px; transition: all .25s; }
+
+  #big-lock-btn:hover, #big-lock-btn.active {
+    border-color: var(--accent);
+    color: var(--accent2);
+    box-shadow: 0 0 40px rgba(204,34,0,.35), inset 0 0 30px rgba(204,34,0,.08);
+  }
+
+  #big-lock-btn.active .icon { animation: shake .1s ease-in-out 3; }
+
+  @keyframes shake {
+    0%,100% { transform: rotate(0); }
+    25%      { transform: rotate(-6deg); }
+    75%      { transform: rotate(6deg); }
+  }
+
+  #big-lock-btn.unlocked {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 20px rgba(0,204,102,.2);
+  }
+
+  .lock-label {
+    font-family: var(--mono);
+    font-size: .8rem;
+    letter-spacing: 2px;
+    opacity: .5;
+  }
+
+  /* ── Message editor ── */
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--dim);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: .85rem;
+    line-height: 1.6;
+    padding: 14px 16px;
+    outline: none;
+    resize: vertical;
+    min-height: 110px;
+    transition: border-color .2s;
+  }
+  textarea:focus { border-color: var(--accent2); }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+
+  .btn-lock {
+    background: var(--accent);
+    color: #fff;
+    flex: 1;
+  }
+  .btn-lock:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .btn-unlock {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid var(--green);
+    flex: 1;
+  }
+  .btn-unlock:hover { background: rgba(0,204,102,.1); }
+
+  .btn-msg {
+    background: transparent;
+    color: var(--dim);
+    border: 1px solid var(--dim);
+    flex: 1;
+  }
+  .btn-msg:hover { border-color: var(--text); color: var(--text); }
+
+  /* ── Log ── */
+  #log {
+    font-family: var(--mono);
+    font-size: .78rem;
+    line-height: 1.8;
+    color: var(--dim);
+    min-height: 80px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .log-ok   { color: var(--green); }
+  .log-err  { color: var(--accent); }
+  .log-info { color: #5588cc; }
+
+  /* ── Device status ── */
+  .device-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .device-row:last-child { border-bottom: none; }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--dim);
+  }
+  .dot.online  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.locked  { background: var(--accent); animation: dot-pulse 1s ease-in-out infinite; }
+  @keyframes dot-pulse {
+    0%,100% { box-shadow: 0 0 4px var(--accent); }
+    50%      { box-shadow: 0 0 16px var(--accent); }
+  }
+
+  .device-name { font-weight: 700; flex: 1; }
+  .device-meta { font-family: var(--mono); font-size: .75rem; color: var(--dim); }
+
+  /* ── Presets ── */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .preset-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: .85rem;
+    font-weight: 500;
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+    line-height: 1.4;
+  }
+  .preset-btn:hover {
+    border-color: var(--dim);
+    background: #111118;
+  }
+
+  /* ── Mobile trigger strip ── */
+  .trigger-strip {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    gap: 12px;
+    z-index: 20;
+  }
+
+  @media (min-width: 600px) { .trigger-strip { display: none; } }
+
+  .btn-mobile-lock {
+    flex: 1;
+    background: var(--accent);
+    color: #fff;
+    font-size: 1rem;
+    padding: 16px;
+    border-radius: 10px;
+    border: none;
+    font-family: var(--sans);
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  .btn-mobile-unlock {
+    flex: 1;
+    background: transparent;
+    color: var(--green);
+    font-size: 1rem;
+    padding: 16px;
+    border-radius: 10px;
+    border: 2px solid var(--green);
+    font-family: var(--sans);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  @media (max-width: 599px) {
+    main { padding-bottom: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🔒</div>
+  <h1>SysLock Remote</h1>
+  <div class="status-pill offline" id="conn-pill">● OFFLINE</div>
+</header>
+
+<main>
+
+  <!-- AUTH -->
+  <div class="card" id="auth-card">
+    <h2>// Connection Config</h2>
+    <div class="field-row">
+      <input type="text" id="server-url" placeholder="Server URL — e.g. https://xxx.koyeb.app" />
+      <input type="password" id="secret-input" placeholder="Admin Secret" />
+      <button class="btn btn-primary" onclick="saveConfig()">CONNECT</button>
+    </div>
+  </div>
+
+  <!-- DEVICE STATUS -->
+  <div class="card">
+    <h2>// Target Devices</h2>
+    <div id="device-list">
+      <div class="device-row">
+        <div class="dot" id="dev-dot"></div>
+        <div class="device-name" id="dev-name">My Laptop</div>
+        <div class="device-meta" id="dev-meta">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTROL -->
+  <div class="card">
+    <h2>// Lock Control</h2>
+    <div class="lock-zone">
+      <button id="big-lock-btn" onclick="toggleLock()">
+        <span class="icon" id="lock-icon">🔓</span>
+        <span id="lock-btn-label">TAP TO LOCK</span>
+      </button>
+      <div class="lock-label" id="lock-state-label">SYSTEM UNLOCKED</div>
+    </div>
+  </div>
+
+  <!-- MESSAGE EDITOR -->
+  <div class="card">
+    <h2>// Lock Screen Message</h2>
+    <textarea id="lock-message">⚠️ System Error Detected
+
+Please contact your System Administrator
+to resolve this issue before continuing.
+
+Error Code: SYS-0x4A3F</textarea>
+    <div class="btn-row">
+      <button class="btn btn-lock" onclick="sendLock()">🔒 LOCK NOW</button>
+      <button class="btn btn-unlock" onclick="sendUnlock()">🔓 UNLOCK</button>
+      <button class="btn btn-msg" onclick="updateMessage()">✉ UPDATE MSG</button>
+    </div>
+  </div>
+
+  <!-- PRESETS -->
+  <div class="card">
+    <h2>// Message Presets</h2>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="setPreset(0)">🛑 System Error\nContact admin</button>
+      <button class="preset-btn" onclick="setPreset(1)">🔧 Maintenance Mode\nIn progress...</button>
+      <button class="preset-btn" onclick="setPreset(2)">🔒 Security Check\nAuthentication required</button>
+      <button class="preset-btn" onclick="setPreset(3)">📵 Unauthorized Access\nEvent logged</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card">
+    <h2>// Activity Log</h2>
+    <div id="log"><span class="log-info">[SYSLOCK] Awaiting connection...</span></div>
+  </div>
+
+</main>
+
+<!-- MOBILE BOTTOM BAR -->
+<div class="trigger-strip">
+  <button class="btn-mobile-lock" onclick="sendLock()">🔒 LOCK</button>
+  <button class="btn-mobile-unlock" onclick="sendUnlock()">🔓 UNLOCK</button>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────
+let cfg = {
+  server: localStorage.getItem('lock_server') || '',
+  secret: localStorage.getItem('lock_secret') || ''
+};
+let currentlyLocked = false;
+
+const presets = [
+  `⚠️ System Error Detected\n\nPlease contact your System Administrator\nto resolve this issue before continuing.\n\nError Code: SYS-0x4A3F`,
+  `🔧 Scheduled Maintenance In Progress\n\nThis system is currently undergoing\nmaintenance by the IT department.\n\nPlease check back later.`,
+  `🔒 Security Verification Required\n\nUnauthorized access attempt detected.\nThis device requires administrator\nauthentication to continue.`,
+  `📵 Access Suspended\n\nUnauthorized activity detected.\nThis event has been logged and reported.\n\nContact IT Security immediately.`,
+];
+
+// ── Init ─────────────────────────────────────────────────────────────────
+window.onload = () => {
+  if (cfg.server) document.getElementById('server-url').value = cfg.server;
+  if (cfg.secret) document.getElementById('secret-input').value = cfg.secret;
+  if (cfg.server && cfg.secret) startPolling();
+};
+
+// ── Config ────────────────────────────────────────────────────────────────
+function saveConfig() {
+  cfg.server = document.getElementById('server-url').value.trim().replace(/\/$/, '');
+  cfg.secret = document.getElementById('secret-input').value.trim();
+  localStorage.setItem('lock_server', cfg.server);
+  localStorage.setItem('lock_secret', cfg.secret);
+  log('Connecting to ' + cfg.server, 'info');
+  startPolling();
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────
+let pollTimer = null;
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  fetchStatus();
+  pollTimer = setInterval(fetchStatus, 2500);
+}
+
+async function fetchStatus() {
+  if (!cfg.server) return;
+  try {
+    const r = await fetch(`${cfg.server}/api/status`, {
+      headers: { 'X-Lock-Secret': cfg.secret }
+    });
+    const data = await r.json();
+    updateUI(data);
+    setPill('online', data.locked ? 'LOCKED' : 'ONLINE');
+  } catch (e) {
+    setPill('offline', 'OFFLINE');
+    setDeviceDot('offline');
+  }
+}
+
+function updateUI(data) {
+  currentlyLocked = data.locked;
+  const btn    = document.getElementById('big-lock-btn');
+  const icon   = document.getElementById('lock-icon');
+  const label  = document.getElementById('lock-btn-label');
+  const slabel = document.getElementById('lock-state-label');
+
+  if (data.locked) {
+    btn.className = 'active';
+    icon.textContent = '🔒';
+    label.textContent = 'TAP TO UNLOCK';
+    slabel.textContent = '⚠ SYSTEM LOCKED';
+    setDeviceDot('locked');
+    document.getElementById('dev-meta').textContent = 'LOCKED';
+  } else {
+    btn.className = 'unlocked';
+    icon.textContent = '🔓';
+    label.textContent = 'TAP TO LOCK';
+    slabel.textContent = 'SYSTEM UNLOCKED';
+    setDeviceDot('online');
+    document.getElementById('dev-meta').textContent = 'Online';
+  }
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────
+async function sendLock() {
+  const msg = document.getElementById('lock-message').value;
+  await api('POST', '/api/lock', { message: msg });
+  log('🔒 Lock command sent', 'err');
+}
+
+async function sendUnlock() {
+  await api('POST', '/api/unlock');
+  log('🔓 Unlock command sent', 'ok');
+}
+
+async function updateMessage() {
+  const msg = document.getElementById('lock-message').value;
+  await api('POST', '/api/message', { message: msg });
+  log('✉ Lock screen message updated', 'info');
+}
+
+function toggleLock() {
+  if (currentlyLocked) sendUnlock();
+  else sendLock();
+}
+
+async function api(method, path, body) {
+  if (!cfg.server) { log('Not connected — fill in server URL and secret', 'err'); return; }
+  try {
+    const r = await fetch(cfg.server + path, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Lock-Secret': cfg.secret
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await r.json();
+    fetchStatus();
+    return data;
+  } catch (e) {
+    log('API error: ' + e.message, 'err');
+  }
+}
+
+// ── Presets ───────────────────────────────────────────────────────────────
+function setPreset(i) {
+  document.getElementById('lock-message').value = presets[i];
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+  const el = document.getElementById('log');
+  const ts = new Date().toLocaleTimeString();
+  el.innerHTML += `<div class="log-${type}">[${ts}] ${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function setPill(cls, text) {
+  const p = document.getElementById('conn-pill');
+  p.className = 'status-pill ' + cls;
+  p.textContent = '● ' + text;
+}
+
+function setDeviceDot(cls) {
+  const d = document.getElementById('dev-dot');
+  d.className = 'dot ' + cls;
+}
+</script>
+</body>
+</html>
