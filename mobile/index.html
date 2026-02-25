@@ -1,227 +1,350 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Unlock My Laptop</title>
-  <meta name="theme-color" content="#0f172a" />
-  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a"/>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f172a;
-      color: #f1f5f9;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-    }
-    .card {
-      background: #1e293b;
-      border-radius: 1.5rem;
-      padding: 2.5rem;
-      width: 100%;
-      max-width: 360px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.4);
-      text-align: center;
-    }
-    h1 { font-size: 1.4rem; margin-bottom: 0.4rem; }
-    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 2rem; }
-    .fingerprint-btn {
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      border: 3px solid #3b82f6;
-      background: #0f172a;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 1.5rem;
-      transition: all 0.2s;
-      position: relative;
-    }
-    .fingerprint-btn:hover { border-color: #60a5fa; transform: scale(1.05); }
-    .fingerprint-btn.scanning { border-color: #f59e0b; animation: pulse 1s infinite; }
-    .fingerprint-btn.success { border-color: #22c55e; background: #052e16; }
-    .fingerprint-btn.error { border-color: #ef4444; background: #1c0202; }
-    .fingerprint-btn svg { width: 60px; height: 60px; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); } 50% { box-shadow: 0 0 0 20px rgba(59,130,246,0); } }
-    .status {
-      font-size: 0.95rem; color: #94a3b8;
-      min-height: 2rem;
-      transition: color 0.3s;
-    }
-    .status.success { color: #22c55e; }
-    .status.error { color: #ef4444; }
-    .status.scanning { color: #f59e0b; }
-    .config-section {
-      margin-top: 2rem;
-      border-top: 1px solid #334155;
-      padding-top: 1.5rem;
-      text-align: left;
-    }
-    label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 0.3rem; }
-    input {
-      width: 100%;
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #f1f5f9;
-      border-radius: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.85rem;
-      margin-bottom: 0.75rem;
-    }
-    input:focus { outline: none; border-color: #3b82f6; }
-    .save-btn {
-      width: 100%;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 0.5rem;
-      padding: 0.6rem;
-      font-size: 0.9rem;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .save-btn:hover { background: #2563eb; }
-    details summary { cursor: pointer; color: #64748b; font-size: 0.8rem; margin-top: 1.5rem; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f172a;color:#f1f5f9;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem}
+    .screen{width:100%;max-width:380px;display:none}
+    .screen.active{display:block}
+    .card{background:#1e293b;border-radius:1.5rem;padding:2rem;box-shadow:0 25px 50px rgba(0,0,0,0.4)}
+    h1{font-size:1.3rem;margin-bottom:.3rem}
+    .sub{color:#94a3b8;font-size:.85rem;margin-bottom:1.5rem}
+    label{font-size:.78rem;color:#94a3b8;display:block;margin-bottom:.3rem;margin-top:.8rem}
+    input{width:100%;background:#0f172a;border:1px solid #334155;color:#f1f5f9;border-radius:.6rem;padding:.6rem .8rem;font-size:.85rem}
+    input:focus{outline:none;border-color:#3b82f6}
+    .btn{width:100%;border:none;border-radius:.75rem;padding:.8rem;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:.75rem;transition:all .2s}
+    .btn-primary{background:#3b82f6;color:#fff}
+    .btn-primary:hover{background:#2563eb}
+    .btn-secondary{background:#1e3a5f;color:#93c5fd;border:1px solid #1e40af}
+    .btn-danger{background:#1c0a0a;color:#f87171;border:1px solid #7f1d1d}
+    .fingerprint-wrap{display:flex;flex-direction:column;align-items:center;margin:1.5rem 0}
+    .fp-btn{width:130px;height:130px;border-radius:50%;border:3px solid #3b82f6;background:#0f172a;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative}
+    .fp-btn:active{transform:scale(.95)}
+    .fp-btn.scanning{border-color:#f59e0b;animation:pulse 1s infinite}
+    .fp-btn.success{border-color:#22c55e;background:#052e16}
+    .fp-btn.error{border-color:#ef4444;background:#1c0202}
+    .fp-btn svg{width:65px;height:65px;color:#94a3b8;transition:color .3s}
+    .fp-btn.scanning svg{color:#f59e0b}
+    .fp-btn.success svg{color:#22c55e}
+    .fp-btn.error svg{color:#ef4444}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4)}50%{box-shadow:0 0 0 18px rgba(59,130,246,0)}}
+    .status{text-align:center;font-size:.9rem;color:#94a3b8;min-height:1.5rem;transition:color .3s}
+    .status.success{color:#22c55e}
+    .status.error{color:#ef4444}
+    .status.scanning{color:#f59e0b}
+    .device-badge{display:flex;align-items:center;gap:.6rem;background:#0f172a;border:1px solid #334155;border-radius:.75rem;padding:.6rem .9rem;margin-bottom:1.5rem;font-size:.82rem;color:#94a3b8}
+    .device-badge span{flex:1}
+    .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
+    .dot.offline{background:#6b7280}
+    .divider{border:none;border-top:1px solid #334155;margin:1.25rem 0}
+    .hint{font-size:.75rem;color:#475569;text-align:center;margin-top:.5rem}
+    .step{display:flex;gap:.75rem;align-items:flex-start;margin-bottom:1rem}
+    .step-num{width:24px;height:24px;border-radius:50%;background:#1e40af;color:#93c5fd;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1rem}
+    .step-text{font-size:.85rem;color:#94a3b8;line-height:1.4}
+    .step-text strong{color:#f1f5f9}
+    .alert{border-radius:.75rem;padding:.8rem 1rem;font-size:.82rem;margin-bottom:1rem}
+    .alert-warn{background:#1c1400;border:1px solid #78350f;color:#fbbf24}
+    .alert-info{background:#0c1a2e;border:1px solid #1e3a5f;color:#93c5fd}
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>🔓 Laptop Unlock</h1>
-  <p class="subtitle">Tap to authenticate with fingerprint</p>
 
-  <button class="fingerprint-btn" id="unlockBtn" onclick="triggerUnlock()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
-    </svg>
-  </button>
+<!-- ══════════════ SCREEN: SETUP ══════════════ -->
+<div class="screen active" id="screen-setup">
+  <div class="card">
+    <h1>🔧 First-time Setup</h1>
+    <p class="sub">Connect your phone to your laptop unlock service</p>
 
-  <p class="status" id="statusText">Tap to unlock your laptop</p>
-
-  <details>
-    <summary>⚙️ Configure credentials</summary>
-    <div class="config-section">
-      <label>Server URL</label>
-      <input type="url" id="serverUrl" placeholder="https://your-app.koyeb.app" />
-      <label>Device ID</label>
-      <input type="text" id="deviceId" placeholder="Paste your device ID" />
-      <label>Secret Key</label>
-      <input type="password" id="secretKey" placeholder="Paste your secret" />
-      <button class="save-btn" onclick="saveConfig()">Save Configuration</button>
+    <div class="alert alert-info">
+      Run <code>/pair</code> on your Koyeb server first to get these values.
     </div>
-  </details>
+
+    <label>Koyeb Server URL</label>
+    <input id="s-server" type="url" placeholder="https://your-app.koyeb.app"/>
+
+    <label>Device ID (from /pair)</label>
+    <input id="s-deviceId" type="text" placeholder="a1b2c3d4e5f6g7h8"/>
+
+    <label>Secret (from /pair)</label>
+    <input id="s-secret" type="password" placeholder="Your device secret"/>
+
+    <button class="btn btn-primary" onclick="startSetup()">Register Fingerprint →</button>
+    <p class="hint">This will prompt your fingerprint once to register it</p>
+  </div>
+</div>
+
+<!-- ══════════════ SCREEN: REGISTERING ══════════════ -->
+<div class="screen" id="screen-registering">
+  <div class="card" style="text-align:center">
+    <div style="font-size:3rem;margin-bottom:1rem">👆</div>
+    <h1>Register Fingerprint</h1>
+    <p class="sub" style="margin-bottom:1.5rem">Follow your phone's prompt to scan your fingerprint or use Face ID</p>
+    <div class="status scanning" id="reg-status">Waiting for biometric prompt...</div>
+  </div>
+</div>
+
+<!-- ══════════════ SCREEN: UNLOCK ══════════════ -->
+<div class="screen" id="screen-unlock">
+  <div class="card">
+    <h1>🔓 Unlock Laptop</h1>
+    <p class="sub">Tap the button and scan your fingerprint</p>
+
+    <div class="device-badge">
+      <div class="dot" id="device-dot"></div>
+      <span id="device-label">Connecting...</span>
+    </div>
+
+    <div class="fingerprint-wrap">
+      <button class="fp-btn" id="fp-btn" onclick="triggerUnlock()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+        </svg>
+      </button>
+    </div>
+
+    <p class="status" id="unlock-status">Tap to unlock</p>
+
+    <hr class="divider"/>
+    <button class="btn btn-danger" onclick="resetSetup()" style="margin-top:0">⚙️ Reset / Change Device</button>
+  </div>
 </div>
 
 <script>
-  // ─── Load saved config ───────────────────────────────────────────────────
-  const cfg = JSON.parse(localStorage.getItem("unlock-config") || "{}");
-  if (cfg.serverUrl) document.getElementById("serverUrl").value = cfg.serverUrl;
-  if (cfg.deviceId)  document.getElementById("deviceId").value  = cfg.deviceId;
-  if (cfg.secretKey) document.getElementById("secretKey").value = cfg.secretKey;
+// ─── State ────────────────────────────────────────────────────────────────
+let cfg = {};
 
-  function saveConfig() {
-    const config = {
-      serverUrl: document.getElementById("serverUrl").value.trim().replace(/\/$/, ""),
-      deviceId:  document.getElementById("deviceId").value.trim(),
-      secretKey: document.getElementById("secretKey").value.trim(),
-    };
-    localStorage.setItem("unlock-config", JSON.stringify(config));
-    setStatus("✅ Configuration saved!", "success");
+function loadCfg() {
+  try { cfg = JSON.parse(localStorage.getItem("unlock-cfg") || "{}"); } catch { cfg = {}; }
+}
+function saveCfg() { localStorage.setItem("unlock-cfg", JSON.stringify(cfg)); }
+loadCfg();
+
+// ─── Screen routing ────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+}
+
+function init() {
+  if (cfg.serverUrl && cfg.deviceId && cfg.userId && cfg.registered) {
+    showScreen("unlock");
+    document.getElementById("device-label").textContent = cfg.deviceId;
+  } else {
+    showScreen("setup");
+    if (cfg.serverUrl) document.getElementById("s-server").value = cfg.serverUrl;
+    if (cfg.deviceId)  document.getElementById("s-deviceId").value = cfg.deviceId;
+  }
+}
+init();
+
+// ─── SimpleWebAuthn browser helpers ────────────────────────────────────────
+// We inline the key functions to avoid needing a bundler
+
+function bufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let str = "";
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function base64urlToBuffer(base64url) {
+  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  const str = atob(base64);
+  const buf = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) buf[i] = str.charCodeAt(i);
+  return buf.buffer;
+}
+
+function encodeCredentialForServer(credential) {
+  return {
+    id: credential.id,
+    rawId: bufferToBase64url(credential.rawId),
+    type: credential.type,
+    response: {
+      clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
+      ...(credential.response.attestationObject
+        ? { attestationObject: bufferToBase64url(credential.response.attestationObject) }
+        : {}),
+      ...(credential.response.authenticatorData
+        ? { authenticatorData: bufferToBase64url(credential.response.authenticatorData),
+            signature: bufferToBase64url(credential.response.signature),
+            userHandle: credential.response.userHandle ? bufferToBase64url(credential.response.userHandle) : null }
+        : {}),
+      transports: credential.response.getTransports ? credential.response.getTransports() : [],
+    },
+    clientExtensionResults: credential.getClientExtensionResults
+      ? credential.getClientExtensionResults()
+      : {},
+  };
+}
+
+function decodeOptions(options) {
+  // Convert base64url strings back to ArrayBuffers for WebAuthn API
+  const decoded = { ...options };
+  if (options.challenge) decoded.challenge = base64urlToBuffer(options.challenge);
+  if (options.user?.id) decoded.user = { ...options.user, id: base64urlToBuffer(options.user.id) };
+  if (options.excludeCredentials) {
+    decoded.excludeCredentials = options.excludeCredentials.map(c => ({
+      ...c, id: base64urlToBuffer(c.id),
+    }));
+  }
+  if (options.allowCredentials) {
+    decoded.allowCredentials = options.allowCredentials.map(c => ({
+      ...c, id: base64urlToBuffer(c.id),
+    }));
+  }
+  return decoded;
+}
+
+// ─── Setup: Register fingerprint ──────────────────────────────────────────
+async function startSetup() {
+  const serverUrl = document.getElementById("s-server").value.trim().replace(/\/$/, "");
+  const deviceId  = document.getElementById("s-deviceId").value.trim();
+  const secret    = document.getElementById("s-secret").value.trim();
+
+  if (!serverUrl || !deviceId || !secret) {
+    alert("Please fill in all fields");
+    return;
   }
 
-  function setStatus(msg, type = "") {
-    const el = document.getElementById("statusText");
-    el.textContent = msg;
-    el.className = "status " + type;
-  }
+  // Generate a stable userId from deviceId
+  const userId = "user_" + deviceId;
 
-  function setBtn(state) {
-    const btn = document.getElementById("unlockBtn");
-    btn.className = "fingerprint-btn " + state;
-  }
+  cfg = { serverUrl, deviceId, secret, userId, registered: false };
+  saveCfg();
 
-  // ─── HMAC-SHA256 using Web Crypto API ────────────────────────────────────
-  async function hmacSHA256(secret, message) {
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    );
-    const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
-    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
-  }
+  showScreen("registering");
+  setRegStatus("Contacting server...", "scanning");
 
-  // ─── Main unlock flow ────────────────────────────────────────────────────
-  async function triggerUnlock() {
-    const config = JSON.parse(localStorage.getItem("unlock-config") || "{}");
-    if (!config.serverUrl || !config.deviceId || !config.secretKey) {
-      setStatus("⚠️ Please configure credentials first", "error");
-      return;
+  try {
+    // 1. Get registration options from server
+    const optRes = await fetch(`${serverUrl}/webauthn/register/options`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, deviceId }),
+    });
+    if (!optRes.ok) {
+      const err = await optRes.json();
+      throw new Error(err.error || "Server error");
     }
+    const options = await optRes.json();
 
-    setBtn("scanning");
-    setStatus("🔍 Verifying fingerprint...", "scanning");
+    setRegStatus("👆 Touch your fingerprint sensor now...", "scanning");
 
-    try {
-      // Use WebAuthn / platform biometric (fingerprint/Face ID)
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          timeout: 30000,
-          userVerification: "required",   // Forces biometric
-          rpId: new URL(config.serverUrl).hostname,
-        },
-      }).catch(async () => {
-        // Fallback: use navigator.credentials with password manager prompt
-        // or just proceed with a local confirmation on devices without WebAuthn
-        return await authenticateWithBiometricFallback();
-      });
+    // 2. Create credential (triggers Android fingerprint prompt)
+    const credential = await navigator.credentials.create({
+      publicKey: decodeOptions(options),
+    });
 
-      if (!credential && credential !== "fallback") {
-        throw new Error("Fingerprint authentication failed");
-      }
+    setRegStatus("Saving passkey...", "scanning");
 
-      setStatus("🔐 Sending unlock signal...", "scanning");
+    // 3. Verify with server
+    const verifyRes = await fetch(`${serverUrl}/webauthn/register/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, credential: encodeCredentialForServer(credential) }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.verified) throw new Error("Server rejected passkey");
 
-      // Sign the request
-      const timestamp = Date.now();
-      const signature = await hmacSHA256(
-        config.secretKey,
-        config.deviceId + timestamp
-      );
+    cfg.registered = true;
+    saveCfg();
+    setRegStatus("✅ Fingerprint registered!", "success");
+    setTimeout(() => {
+      showScreen("unlock");
+      document.getElementById("device-label").textContent = deviceId;
+    }, 1500);
 
-      const resp = await fetch(`${config.serverUrl}/request-unlock`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deviceId: config.deviceId, signature, timestamp }),
-      });
+  } catch (err) {
+    console.error(err);
+    setRegStatus("❌ " + err.message, "error");
+    setTimeout(() => showScreen("setup"), 3000);
+  }
+}
 
-      const result = await resp.json();
-      if (!resp.ok) throw new Error(result.error || "Server error");
+function setRegStatus(msg, cls = "") {
+  const el = document.getElementById("reg-status");
+  el.textContent = msg;
+  el.className = "status " + cls;
+}
 
-      setBtn("success");
-      setStatus("✅ " + result.message, "success");
-      setTimeout(() => { setBtn(""); setStatus("Tap to unlock your laptop"); }, 4000);
+// ─── Unlock: Authenticate ─────────────────────────────────────────────────
+function setFpBtn(state) {
+  document.getElementById("fp-btn").className = "fp-btn " + state;
+}
+function setUnlockStatus(msg, cls = "") {
+  const el = document.getElementById("unlock-status");
+  el.textContent = msg;
+  el.className = "status " + cls;
+}
 
-    } catch (err) {
-      setBtn("error");
-      setStatus("❌ " + err.message, "error");
-      setTimeout(() => { setBtn(""); setStatus("Tap to unlock your laptop"); }, 3000);
-    }
+async function triggerUnlock() {
+  if (!cfg.serverUrl || !cfg.userId || !cfg.registered) {
+    alert("Please complete setup first");
+    return;
   }
 
-  // Fallback for devices that support biometrics but not WebAuthn
-  async function authenticateWithBiometricFallback() {
-    if ("PublicKeyCredential" in window && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
-      throw new Error("Biometric setup required — see setup guide");
+  setFpBtn("scanning");
+  setUnlockStatus("Contacting server...", "scanning");
+
+  try {
+    // 1. Get auth challenge from server
+    const optRes = await fetch(`${cfg.serverUrl}/webauthn/auth/options`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: cfg.userId }),
+    });
+    if (!optRes.ok) {
+      const err = await optRes.json();
+      throw new Error(err.error || "Server error");
     }
-    // On Android/iOS browsers, we can use a simple confirm as last resort
-    const ok = confirm("Authenticate to unlock your laptop");
-    if (!ok) throw new Error("Authentication cancelled");
-    return "fallback";
+    const options = await optRes.json();
+
+    setUnlockStatus("👆 Touch your fingerprint sensor...", "scanning");
+
+    // 2. Authenticate (triggers Android fingerprint prompt)
+    const credential = await navigator.credentials.get({
+      publicKey: decodeOptions(options),
+    });
+
+    setUnlockStatus("Verifying...", "scanning");
+
+    // 3. Send to server — it verifies and sends unlock to laptop
+    const verifyRes = await fetch(`${cfg.serverUrl}/webauthn/auth/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: cfg.userId,
+        deviceId: cfg.deviceId,
+        credential: encodeCredentialForServer(credential),
+      }),
+    });
+    const result = await verifyRes.json();
+    if (!verifyRes.ok) throw new Error(result.error || "Verification failed");
+
+    setFpBtn("success");
+    setUnlockStatus("✅ " + result.message, "success");
+    setTimeout(() => { setFpBtn(""); setUnlockStatus("Tap to unlock"); }, 4000);
+
+  } catch (err) {
+    console.error(err);
+    setFpBtn("error");
+    setUnlockStatus("❌ " + (err.message || "Failed"), "error");
+    setTimeout(() => { setFpBtn(""); setUnlockStatus("Tap to unlock"); }, 3000);
   }
+}
+
+// ─── Reset ────────────────────────────────────────────────────────────────
+function resetSetup() {
+  if (!confirm("This will clear your setup. You'll need to re-register your fingerprint.")) return;
+  localStorage.removeItem("unlock-cfg");
+  cfg = {};
+  showScreen("setup");
+}
 </script>
 </body>
 </html>
