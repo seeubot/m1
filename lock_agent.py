@@ -18,8 +18,8 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 # ── Config ─────────────────────────────────────────────────────────────────
-DEFAULT_SERVER = os.environ.get("LOCK_SERVER", "https://your-app.koyeb.app")
-DEFAULT_SECRET = os.environ.get("LOCK_SECRET", "change-me-secret-123")
+DEFAULT_SERVER = os.environ.get("LOCK_SERVER", "https://gradual-ophelie-seeutech-bc4204e6.koyeb.app")
+DEFAULT_SECRET = os.environ.get("LOCK_SECRET", "hellomaya")
 POLL_INTERVAL  = 2   # seconds between server polls
 
 # ── Lock Window ────────────────────────────────────────────────────────────
