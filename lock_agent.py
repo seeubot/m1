@@ -34,22 +34,23 @@ class LockScreen:
         r = self.root
         r.title("")
         r.configure(bg="#0a0a0f")
-        # Fullscreen on all monitors via geometry hack
         r.attributes("-fullscreen", True)
         r.attributes("-topmost", True)
-        r.attributes("-toolwindow", True)
+        # -toolwindow is Windows-only — apply safely
+        try:
+            r.attributes("-toolwindow", True)
+        except tk.TclError:
+            pass
         r.overrideredirect(True)                 # Remove title bar
-        # Span entire virtual desktop (multi-monitor)
         sw = r.winfo_screenwidth()
         sh = r.winfo_screenheight()
         r.geometry(f"{sw}x{sh}+0+0")
-        # Disable all close methods
         r.protocol("WM_DELETE_WINDOW", lambda: None)
-        r.bind("<Alt-F4>",          lambda e: "break")
-        r.bind("<Escape>",          lambda e: "break")
+        r.bind("<Alt-F4>",             lambda e: "break")
+        r.bind("<Escape>",             lambda e: "break")
         r.bind("<Control-Alt-Delete>", lambda e: "break")
         r.focus_force()
-        r.grab_set()                             # Capture all events
+        r.grab_set()
 
     def _build_ui(self, message: str):
         r = self.root
@@ -158,25 +159,42 @@ class LockAgent:
     def poll(self):
         """Background thread: polls server and manages lock state."""
         was_locked = False
+        retry_delay = POLL_INTERVAL
+
         while self._running:
             try:
-                r = requests.get(f"{self.server}/api/status",
-                                 headers=self.headers, timeout=5)
+                r = requests.get(
+                    f"{self.server}/api/status",
+                    headers=self.headers,
+                    timeout=8,
+                    # Force close connection after each request to avoid reset errors
+                    headers={**self.headers, "Connection": "close"}
+                )
+                r.raise_for_status()
                 data = r.json()
                 is_locked = data.get("locked", False)
                 message   = data.get("message", "System restricted.")
 
                 if is_locked and not was_locked:
-                    # Need to show lock on main thread
                     self._show_lock(message)
                 elif not is_locked and was_locked:
                     self._hide_lock()
 
                 was_locked = is_locked
+                retry_delay = POLL_INTERVAL   # reset backoff on success
+
+            except requests.exceptions.ConnectionError as e:
+                print(f"[connection error] Server unreachable — retrying in {retry_delay}s")
+                retry_delay = min(retry_delay * 2, 30)   # exponential backoff, max 30s
+
+            except requests.exceptions.Timeout:
+                print(f"[timeout] Server did not respond — retrying in {retry_delay}s")
+                retry_delay = min(retry_delay * 2, 30)
+
             except Exception as e:
                 print(f"[poll error] {e}")
 
-            time.sleep(POLL_INTERVAL)
+            time.sleep(retry_delay)
 
     def _show_lock(self, message: str):
         """Must be called from the main thread via after()."""
